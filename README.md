@@ -58,7 +58,12 @@ the wallet's node removes the second chain instead of checking it.
 Two limits follow from being a page:
 
 - A page served over https may dial `wss://` anywhere and `ws://` only on the machine
-  it runs on. A wallet whose node is `ws://` on another machine can sign, but this
+  it runs on, and a browser may not allow even that without asking. Seen on
+  2026-10-10: from `https://sol-znn.github.io/ptlc-console/`, a headless Chrome got no
+  answer from `ws://127.0.0.1:35998` with a devnet listening there, and the page fell
+  back to its own chain; the same Chrome reached that devnet from a page served on
+  `http://127.0.0.1`. Whether an ordinary Chrome window asks for permission or
+  refuses has not been checked. A node with a `wss://` address has no such limit. A wallet whose node is `ws://` on another machine can sign, but this
   page cannot follow it, and says so rather than offering Syrius as a signer.
 - Over HTTP the node must allow this page's origin (`HTTPCors`). Over a WebSocket it
   must allow it in `WSOrigins`, which go-zenon's devnet configs set to `*`.

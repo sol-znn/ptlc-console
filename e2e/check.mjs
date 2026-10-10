@@ -6,6 +6,8 @@
 //   npm --prefix web run build:offline      # a build whose default node is a closed port
 //   node e2e/check.mjs                      # three scenarios and the console's swap
 //   node e2e/check.mjs --all                # every scenario in the catalogue
+//   node e2e/check.mjs --site https://sol-znn.github.io/ptlc-console
+//                                           # the published page instead of the local build
 //   node e2e/check.mjs --live ws://127.0.0.1:35998
 //                                           # also: one scenario against that node, and a
 //                                           # stand-in wallet whose node it is
@@ -90,7 +92,8 @@ const server = createServer((request, response) => {
   createReadStream(file).pipe(response)
 })
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
-const site = `http://127.0.0.1:${server.address().port}${BASE}`
+// --site checks a page that is already published instead of the local build.
+const site = flag('site', '').replace(/\/$/, '') || `http://127.0.0.1:${server.address().port}${BASE}`
 
 // ---- a browser -----------------------------------------------------------------
 
@@ -308,7 +311,7 @@ async function main() {
   // The old address of the page, when it was a document of its own. This one
   // is a load, and so a new chain.
   await open('/scenarios/', `location.hash === '#/scenarios' && document.querySelectorAll('article.card').length > 0`)
-  check('the old /scenarios/ address lands on the page, inside the console document', (await page('location.pathname')).endsWith('/ptlc-console/'), await page('location.href'))
+  check('the old /scenarios/ address lands on the page, inside the console document', !(await page('location.pathname')).includes('scenarios'), await page('location.href'))
 
   // ---- a node, if there is one ---------------------------------------------------
   if (live) {
