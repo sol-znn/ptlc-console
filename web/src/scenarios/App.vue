@@ -16,7 +16,7 @@ import ThemeToggle from '../components/ThemeToggle.vue'
 import FlowStage from './FlowStage.vue'
 import { about, took, type Scenario } from './flow.ts'
 import { node } from '../node/node.ts'
-import { run, state, stop, tally } from './store.ts'
+import { run, runBatch, state, stop, stopBatch, tally } from './store.ts'
 
 /** Seconds of the chain's clock per second of this machine's, for the countdown of a wait. */
 const rate = computed(() => (node.kind === 'sim' ? (node.pace > 0 ? 10000 / node.pace : 0) : 1))
@@ -34,6 +34,7 @@ const groups = computed(() =>
     return {
       ...group,
       scenarios,
+      ids: scenarios.map((s) => s.id),
       passed: scenarios.filter((s) => state.runs[s.id]?.status === 'pass').length,
       failed: scenarios.filter((s) => state.runs[s.id]?.status === 'fail').length,
     }
@@ -41,6 +42,14 @@ const groups = computed(() =>
 )
 const counts = computed(tally)
 const total = computed(() => state.catalogue?.scenarios.length ?? 0)
+/** What Run all runs: the catalogue, in the order the page draws it. */
+const all = computed(() => groups.value.flatMap((g) => g.ids))
+/** Whether a batch could start now: no run holds the accounts, and the chain could take one. */
+const free = computed(() => !state.starting && !state.busy && !state.nodeDown && !!state.momentum && state.funded !== false)
+const allNote = computed(() => {
+  if (state.batch === 'all') return state.queue.length ? `${state.queue.length} still to start` : 'On the last one'
+  return `${all.value.length} scenarios, one after another`
+})
 
 const status = (s: Scenario): 'none' | 'running' | 'pass' | 'fail' => state.runs[s.id]?.status ?? 'none'
 const badge = (s: Scenario): string => {
@@ -53,6 +62,7 @@ const badge = (s: Scenario): string => {
 /** Why a card's button cannot be pressed now, or nothing. */
 function held(s: Scenario): string {
   if (state.runs[s.id]?.status === 'running') return ''
+  if (state.queue.includes(s.id)) return 'Queued'
   if (state.starting) return 'Starting…'
   if (state.busy) return `Waiting for “${state.busy.title}”`
   if (state.funded === false) return 'The test keys hold nothing on this chain'
@@ -117,6 +127,11 @@ const toggle = (s: Scenario): void => {
         <span><i class="key line-ok"></i>the contract accepted</span>
         <span><i class="key line-no"></i>the contract refused, which some steps are there to show</span>
       </p>
+      <div class="run-all">
+        <button v-if="state.batch === 'all'" class="btn btn-stop" type="button" @click="stopBatch()"><Icon name="square" :size="11" />Stop</button>
+        <button v-else class="btn btn-primary btn-run" type="button" :disabled="!free || all.length === 0" @click="runBatch('all', all)"><Icon name="play" :size="11" />Run all</button>
+        <span class="eta">{{ allNote }}</span>
+      </div>
     </section>
 
     <p v-if="state.error" class="alert" role="alert">The scenario runner did not load: {{ state.error }}</p>
@@ -138,6 +153,8 @@ const toggle = (s: Scenario): void => {
         <span class="ledger score" :class="{ all: group.passed === group.scenarios.length, bad: group.failed > 0 }">
           {{ group.passed }} of {{ group.scenarios.length }} passed<template v-if="group.failed">, {{ group.failed }} failed</template>
         </span>
+        <button v-if="state.batch === group.id" class="btn btn-quiet btn-stop" type="button" @click="stopBatch()"><Icon name="square" :size="11" />Stop</button>
+        <button v-else class="btn btn-quiet btn-run" type="button" :disabled="!free || group.ids.length === 0" :aria-label="`Run every scenario in ${group.title}`" @click="runBatch(group.id, group.ids)"><Icon name="play" :size="11" />Run section</button>
         <p>{{ group.lede }}</p>
       </header>
 

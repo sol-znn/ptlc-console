@@ -206,6 +206,13 @@ const helpers = `window.__p = {
       log: Array.from(card.querySelectorAll('.log li, .log p, pre')).map((x) => x.innerText).join(' | ').slice(-600),
     }
   },
+  section(i) {
+    const g = document.querySelectorAll('section.group')[i]
+    const b = g && g.querySelector('header .btn')
+    return g ? { title: g.querySelector('h2').textContent.trim(), score: g.querySelector('.score').textContent.trim(), button: b.textContent.trim(), disabled: b.disabled, cards: g.querySelectorAll('article.card').length, queued: Array.from(g.querySelectorAll('.eta')).filter((e) => e.textContent.trim() === 'Queued').length } : null
+  },
+  runSection(i) { const b = document.querySelectorAll('section.group')[i].querySelector('header .btn-run'); if (!b || b.disabled) return 'held'; b.click(); return 'ok' },
+  runAll() { const b = document.querySelector('.run-all .btn'); return b ? { text: b.textContent.trim(), disabled: b.disabled, note: document.querySelector('.run-all .eta').textContent.trim() } : null },
   tally() { return Array.from(document.querySelectorAll('.tally dd')).map((d) => d.textContent.trim()).join(' / ') },
 }; 'ok'`
 
@@ -296,6 +303,18 @@ async function main() {
     await sleep(350)
     await runScenario({ id: title, title }, 240_000)
   }
+  // A section's Run is a queue of the same single runs, so what is checked is
+  // the queue: that it holds the rest, goes through them, and lets go.
+  const section = await page('window.__p.section(0)')
+  await until("the section's Run to be free", () => page('window.__p.runSection(0)'), (r) => r === 'ok', 30_000)
+  const during = await until('the section to queue its scenarios', () => page('window.__p.section(0)'), (g) => g.button === 'Stop', 10_000)
+  check(`${section.title}: its Run queues the rest of the section and turns into Stop`, during.queued === section.cards - 1, `${during.queued} queued of ${section.cards}`)
+  const held = await page('window.__p.runAll()')
+  check('Run all is held while a section runs', held.disabled, held.text)
+  const ended = await until(`${section.title} to finish`, () => page('window.__p.section(0)'), (g) => g.button === 'Run section' && !g.disabled, section.cards * 240_000)
+  check(`${section.title}: every scenario in it passed`, ended.score === `${section.cards} of ${section.cards} passed`, ended.score)
+  const free = await page('window.__p.runAll()')
+  check('Run all is offered again', free.text === 'Run all' && !free.disabled, `${free.text}; ${free.note}`)
   say(`tally on the page (passed / failed / not run): ${await page('window.__p.tally()')}`)
   await picture('scenarios')
 

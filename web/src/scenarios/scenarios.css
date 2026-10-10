@@ -183,6 +183,18 @@ body {
   color: var(--dim);
   max-width: none;
 }
+/* Run all sits under the legend, where the paragraph that says "press Run"
+   ends: the one filled button on the page until a card is opened. */
+.run-all {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 20px;
+}
+.run-all .btn {
+  min-width: 112px;
+}
 .legend span {
   display: inline-flex;
   align-items: center;
@@ -267,7 +279,7 @@ body {
 }
 .group > header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 2px 16px;
   align-items: baseline;
 }
@@ -291,6 +303,19 @@ body {
 }
 .group > header .score.bad {
   color: var(--refused);
+}
+/* A section's Run, in the outline a closed card's Run has: plainly a thing to
+   press, and not a second filled button beside Run all. */
+.group > header .btn {
+  justify-self: start;
+  min-width: 112px;
+}
+.group > header .btn-run {
+  --btn-fg: var(--znn-ink);
+  --btn-border: color-mix(in srgb, var(--znn) 45%, transparent);
+  --btn-bg-hover: var(--plasma);
+  --btn-fg-hover: var(--on-plasma);
+  --btn-border-hover: transparent;
 }
 
 .cards {

@@ -36,6 +36,10 @@ export const state = reactive({
   open: '',
   startError: {} as Record<string, string>,
   starting: '',
+  /** The scenarios a Run all or a section's Run has still to start, in order. */
+  queue: [] as string[],
+  /** Which button that queue came from: 'all', a group's id, or nothing. */
+  batch: '',
   momentum: null as { height: number; timestamp: number } | null,
   nodeDown: false,
   nodeError: '',
@@ -80,6 +84,7 @@ function pump(run: RunView): void {
       followers.delete(run.id)
       if (state.busy?.id === run.id) state.busy = null
       void readChain()
+      void advance()
       return
     }
     apply(run, item)
@@ -132,7 +137,32 @@ export async function run(id: string): Promise<void> {
 }
 
 export function stop(runId: string): void {
+  // Stop means stop: a queue that went on to the next card would leave the
+  // person who pressed it watching another run start.
+  state.queue = []
   followers.get(runId)?.stop()
+}
+
+// A batch is a queue of single runs. Scenarios cannot overlap, so each one is
+// started when the one before it closes, whether that passed or failed: a
+// batch is there to fill in the tally, and stopping at the first failure
+// would hide the rest.
+async function advance(): Promise<void> {
+  while (state.queue.length && !state.busy && !state.starting) await run(state.queue.shift() as string)
+  if (!state.queue.length && !state.busy) state.batch = ''
+}
+
+export function runBatch(batch: string, ids: string[]): void {
+  if (state.starting || state.busy || state.queue.length || ids.length === 0) return
+  state.batch = batch
+  state.queue = [...ids]
+  void advance()
+}
+
+export function stopBatch(): void {
+  state.queue = []
+  if (state.busy) stop(state.busy.id)
+  else state.batch = ''
 }
 
 // ---- the chain -------------------------------------------------------------------
@@ -171,7 +201,7 @@ export async function start(): Promise<void> {
     // are to be read again. Results stay; they say which chain they ran on
     // only by having run, so a run in flight is stopped rather than left to
     // finish against a node the page no longer shows.
-    if (state.busy) stop(state.busy.id)
+    stopBatch()
     state.momentum = null
     state.funded = null
     state.nodeDown = false
