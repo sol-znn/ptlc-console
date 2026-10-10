@@ -1,0 +1,15 @@
+# The go-zenon the in-browser chain is built from: one commit, and the tree it
+# must have. scripts/fetch-go-zenon.sh reads this and refuses a tree that
+# differs.
+#
+# This is sol-znn/go-zenon, branch `ptlc`: the ptlc contract on go-zenon
+# master, the branch of zenon-network/go-zenon#138 and the one the lab at
+# ptlc.zenon.foo runs (zenon-ptlc docker/compose.master.yml). It is taken
+# whole. If a build ever needs changes on top of it, put *.patch files in
+# go-zenon/patches; they are applied in name order before the tree is checked.
+#
+# To move to a newer contract, set BASE to the commit and TREE to its tree
+# (git rev-parse <commit>^{tree}), and run the tests in sim/.
+REPO=https://github.com/sol-znn/go-zenon.git
+BASE=45e1bbb48ce6fc19d44c5fbf59ccf5784981fced
+TREE=b8bb3720dd36e6f9ba0537864c18bbb4a001b910

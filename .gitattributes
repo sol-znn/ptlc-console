@@ -1,0 +1,7 @@
+# Scripts run under sh on the build machine, whatever checked them out.
+*.sh text eol=lf
+go-zenon/PIN text eol=lf
+*.patch -text
+# Test vectors are compared byte for byte.
+web/tests/vectors/** -text
+sim/chain/genesis.json -text

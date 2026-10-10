@@ -1,0 +1,6 @@
+.build/
+web/node_modules/
+web/dist/
+web/src/sim/gen/
+*.test.exe
+web/dist-offline/
