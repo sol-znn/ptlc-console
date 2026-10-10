@@ -48,7 +48,7 @@ const all = computed(() => groups.value.flatMap((g) => g.ids))
 const free = computed(() => !state.starting && !state.busy && !state.nodeDown && !!state.momentum && state.funded !== false)
 const allNote = computed(() => {
   if (state.batch === 'all') return state.queue.length ? `${state.queue.length} still to start` : 'On the last one'
-  return `${all.value.length} scenarios, one after another`
+  return `${all.value.length} scenarios`
 })
 
 const status = (s: Scenario): 'none' | 'running' | 'pass' | 'fail' => state.runs[s.id]?.status ?? 'none'
@@ -65,7 +65,7 @@ function held(s: Scenario): string {
   if (state.queue.includes(s.id)) return 'Queued'
   if (state.starting) return 'Starting…'
   if (state.busy) return `Waiting for “${state.busy.title}”`
-  if (state.funded === false) return 'The test keys hold nothing on this chain'
+  if (state.funded === false) return 'Keys unfunded'
   return ''
 }
 const toggle = (s: Scenario): void => {
@@ -79,7 +79,7 @@ const toggle = (s: Scenario): void => {
       <LabMark />
       <div>
         <strong>PTLC scenarios</strong>
-        <span>every case, run for you on a test chain</span>
+        <span>every case, on a test chain</span>
       </div>
     </a>
 
@@ -119,13 +119,13 @@ const toggle = (s: Scenario): void => {
     <section class="intro">
       <h1>What a PTLC can do, shown working</h1>
       <p>
-        A PTLC holds funds until someone proves they have the right secret or key, or until a deadline passes and the owner takes them back. Press <b>Run</b> on any card. The page signs each step with test keys, the chain answers, and the card shows what happened. There is nothing to install and no wallet to connect.
-        <template v-if="node.kind === 'sim'"> The chain is running in this tab: it is go-zenon's own code, the same contract a node runs, with no network behind it.</template>
+        A PTLC holds funds until someone shows the right secret or key, or a deadline passes and the owner takes them back. Press <b>Run</b> on any card.
+        
       </p>
       <p class="legend">
-        <span><i class="key ok"></i>the step went as it should</span>
-        <span><i class="key line-ok"></i>the contract accepted</span>
-        <span><i class="key line-no"></i>the contract refused, which some steps are there to show</span>
+        <span><i class="key ok"></i>step done</span>
+        <span><i class="key line-ok"></i>accepted</span>
+        <span><i class="key line-no"></i>refused</span>
       </p>
       <div class="run-all">
         <button v-if="state.batch === 'all'" class="btn btn-stop" type="button" @click="stopBatch()"><Icon name="square" :size="11" />Stop</button>
@@ -137,14 +137,14 @@ const toggle = (s: Scenario): void => {
     <p v-if="state.error" class="alert" role="alert">The scenario runner did not load: {{ state.error }}</p>
     <p v-else-if="!state.catalogue" class="loading">Loading the scenarios</p>
     <p v-if="node.kind === 'sim' && node.fellBack" class="alert note-sim">
-      No node answered at the default address, so the scenarios run on the chain this page carries. The node menu in the bar picks another.
+      No node answered at the default address, so the scenarios run on the chain in this page.
     </p>
     <p v-if="node.kind === 'sim' && node.sim === 'failed'" class="alert" role="alert">The chain in this page did not load: {{ node.simError }}</p>
     <p v-if="state.nodeDown && node.kind === 'remote'" class="alert" role="alert">
-      {{ node.url }} is not answering ({{ state.nodeError }}). Pick the chain in this page from the node menu to run without a node.
+      {{ node.url }} is not answering ({{ state.nodeError }}). Pick the chain in this page from the node menu.
     </p>
     <p v-if="state.funded === false" class="alert" role="alert">
-      The scenarios sign with the published keys of a go-zenon devnet, and on this chain those keys hold nothing, so no scenario could take its first step. Pick a devnet, or the chain in this page, from the node menu.
+      The test keys hold nothing on this chain. Pick a devnet or the chain in this page from the node menu.
     </p>
 
     <section v-for="group in groups" :key="group.id" class="group" :class="group.id">
@@ -196,7 +196,7 @@ const toggle = (s: Scenario): void => {
           <span class="tag featured">proof of concept</span>
         </div>
         <p>
-          zBTC is a prototype for holding bitcoin on Zenon. In its design, bitcoin goes into a reserve that only the network's pillars can spend, and the same amount of zBTC is issued here. Every Zenon node checks Bitcoin for itself with a small built-in Bitcoin client, so nobody has to trust a bridge operator.
+          zBTC is a prototype for holding bitcoin on Zenon: bitcoin goes into a reserve only the pillars can spend, and the same amount of zBTC is issued here.
         </p>
         <ol class="zbtc-flow" aria-label="How zBTC is meant to work">
           <li><b>Bitcoin</b><span>a deposit, in an ordinary Taproot output</span></li>
@@ -204,21 +204,21 @@ const toggle = (s: Scenario): void => {
           <li><b>zBTC on Zenon</b><span>issued against the deposit, checked by every node</span></li>
         </ol>
         <p>
-          The first two cards above are its first building block: bitcoin traded for ZNN through this lock, with no custodian in between. The third is the check a client makes before it locks anything. In zBTC's own test lab that swap passed 35 of 35 repeated runs, including refunds, crashes mid-swap, Bitcoin reorganisations and a signer going missing.
+          The first two cards above are its first building block: bitcoin traded for ZNN with no custodian.
         </p>
         <dl class="zbtc-status">
-          <div><dt>Built and tested</dt><dd>the bitcoin-for-ZNN swap; the built-in Bitcoin client, replayed against 4,044 real Bitcoin block headers; three relays that feed it headers and proofs</dd></div>
-          <div><dt>In progress</dt><dd>the contract that issues zBTC; the ceremony in which pillars create the reserve key together</dd></div>
-          <div><dt>Here</dt><dd>zBTC's own lab is not part of this page. What runs here is its swap, on the PTLC contract. The prototype is the <code>zenon-zbtc</code> repository, status as of 5 October 2026.</dd></div>
+          <div><dt>Built and tested</dt><dd>the bitcoin-for-ZNN swap, the built-in Bitcoin client, three relays</dd></div>
+          <div><dt>In progress</dt><dd>the zBTC contract; the reserve key ceremony</dd></div>
+          <div><dt>Here</dt><dd>This page runs the swap only. The prototype is the <code>zenon-zbtc</code> repository.</dd></div>
         </dl>
       </aside>
     </section>
 
     <footer class="foot">
       <p>
-        {{ total }} scenarios. Results are kept until this tab is reloaded. One scenario runs at a time, because they share two test accounts. The keys are a devnet's published ones; the funds are worth nothing. The Bitcoin in the last group is a chain kept in this page, with real transactions checked by a real script engine and no blocks behind them.
+        {{ total }} scenarios, one at a time. Results last until reload. Test keys; nothing here has value.
       </p>
-      <p>Want to make each call by hand, use a wallet, or see every block these runs put on the chain? <a href="#/entries">Open the console</a>: it reads the same chain.</p>
+      <p><a href="#/entries">Open the console</a> to make each call by hand or use a wallet.</p>
     </footer>
   </main>
 </template>

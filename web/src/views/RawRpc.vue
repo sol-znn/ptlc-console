@@ -72,7 +72,7 @@ const time = (at: number) => new Date(at).toISOString().slice(11, 19)
 <template>
   <h1 class="bench-title">Raw RPC</h1>
   <p class="bench-lede">
-    The node's JSON-RPC, sent straight from this page to {{ describe() }}. The chain in the page answers the same methods a node does, because it is the same code.
+    JSON-RPC, sent straight to {{ describe() }}.
   </p>
 
   <section class="panel">
@@ -100,14 +100,14 @@ const time = (at: number) => new Date(at).toISOString().slice(11, 19)
     </div>
     <pre v-if="form.answer" class="well answer" :class="{ bad: !form.ok }">{{ form.answer }}</pre>
     <p class="note" style="margin-top: 12px">
-      <code>embedded.ptlc.getById</code> is the contract's whole read interface. It answers for an entry that is locked, and says <code>data non existent</code> for one that was paid, returned, or never made. There is no call that lists entries; the page folds them out of <code>ledger.getAccountBlocksByHeight</code> on the contract's address.
+      <code>embedded.ptlc.getById</code> is the only read call. It says <code>data non existent</code> for an entry that was paid, returned, or never made.
     </p>
   </section>
 
   <section class="panel">
     <h2 class="section-title">Calls the benches made</h2>
-    <p class="small">The background polling that keeps the page current is left out; it is the same four calls every two seconds.</p>
-    <p v-if="state.rpcLog.length === 0" class="small" style="margin-top: 8px">None yet. Send a block from any bench and its calls are listed here in order.</p>
+    <p class="small">Background polling is left out.</p>
+    <p v-if="state.rpcLog.length === 0" class="small" style="margin-top: 8px">None yet.</p>
     <div v-else class="table-scroll" style="margin-top: 8px">
       <table class="grid log">
         <thead>

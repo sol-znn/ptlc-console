@@ -81,7 +81,7 @@ const template = computed(() =>
     <details>
       <summary>The block, as Syrius is handed it</summary>
       <p class="small lead">
-        The page fills in where it goes, what it carries and the data. The zeroed fields are the wallet's: account, height, previous block, momentum, plasma, signature. Syrius shows the contract as unrecognized, because ptlc is not one it knows.
+        The zeroed fields are the wallet's to fill. Syrius shows the contract as unrecognized.
       </p>
       <pre class="well">{{ JSON.stringify(template, null, 2) }}</pre>
     </details>

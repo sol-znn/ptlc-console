@@ -57,33 +57,33 @@ const checks = computed<Check[]>(() => {
 
   list.push(
     w.value.address
-      ? { state: 'ok', title: 'Connected to this page', detail: `As ${w.value.address}. The connection is to that one account; switch accounts in Syrius and this page is shown nothing until it is approved for the new one.` }
-      : { state: 'no', title: 'Not connected', detail: 'Syrius tells a site nothing, not even its chain, until you approve it. Connect, and unlock the wallet if it asks.' },
+      ? { state: 'ok', title: 'Connected to this page', detail: `As ${w.value.address}.` }
+      : { state: 'no', title: 'Not connected', detail: 'Connect, and unlock the wallet if it asks.' },
   )
   if (!w.value.address) return list
 
   if (node.source !== 'wallet') {
-    list.push({ state: 'no', title: 'It has not said which node it is on', detail: 'Syrius reports its node to a connected page, and this page reads that node. Without it the page cannot follow what the wallet publishes, and does not sign through it.' })
+    list.push({ state: 'no', title: 'It has not said which node it is on', detail: 'Without its node the page cannot follow what the wallet publishes.' })
     return list
   }
   list.push(
     node.problem
       ? { state: 'no', title: 'This page cannot dial its node', detail: node.problem }
       : state.nodeError
-        ? { state: 'no', title: 'Its node is not answering this page', detail: `${node.url}: ${state.nodeError}. Syrius reaches its node from the extension, which no page's rules bind; this page has to reach it too, to show what the wallet published.` }
-        : { state: 'ok', title: 'The page reads its node', detail: `${node.url}. While Syrius is connected this is the only node the page reads, so what you see here and what Syrius signs for are one chain. Change the node in Syrius and the page follows.` },
+        ? { state: 'no', title: 'Its node is not answering this page', detail: `${node.url}: ${state.nodeError}. The page has to reach it too.` }
+        : { state: 'ok', title: 'The page reads its node', detail: `${node.url}. Change the node in Syrius and the page follows.` },
   )
   if (state.momentum && !state.nodeError) {
     list.push(
       w.value.chainId === chainId()
-        ? { state: 'ok', title: `Signing for chain ${chainId()}`, detail: 'The chain identifier goes into every block hash; a block signed for another chain is refused.' }
-        : { state: 'no', title: `Syrius signs for chain ${w.value.chainId ?? 'unknown'}, its node is chain ${chainId()}`, detail: `On the screen where Syrius lists its nodes it reads the node's chain and offers to use it. Take that: a block signed for chain ${w.value.chainId ?? 'unknown'} is refused by a node on chain ${chainId()}.` },
+        ? { state: 'ok', title: `Signing for chain ${chainId()}`, detail: 'A block signed for another chain is refused.' }
+        : { state: 'no', title: `Syrius signs for chain ${w.value.chainId ?? 'unknown'}, its node is chain ${chainId()}`, detail: `In the Syrius node list, take the chain it reads from the node. A block signed for chain ${w.value.chainId ?? 'unknown'} is refused by a node on chain ${chainId()}.` },
     )
     list.push(
       state.spork
         ? { state: 'ok', title: 'The ptlc contract is active there', detail: 'The spork that turns the contract on is active on this chain.' }
         : state.spork === false
-          ? { state: 'no', title: 'The ptlc contract is not active on that chain', detail: `A Create sent there is a transfer to an address nothing answers at. A devnet on the ptlc branch has it; the default is ${DEFAULT_NODE}.` }
+          ? { state: 'no', title: 'The ptlc contract is not active on that chain', detail: `A devnet on the ptlc branch has it; the default is ${DEFAULT_NODE}.` }
           : { state: 'unknown', title: 'Reading whether the ptlc contract is active there', detail: 'The page is asking the node for its sporks.' },
     )
   }
@@ -94,15 +94,15 @@ const checks = computed<Check[]>(() => {
     list.push(
       znn > 0n || qsr > 0n
         ? { state: 'ok', title: 'It holds something to lock', detail: `${formatUnits(znn, 8)} ZNN and ${formatUnits(qsr, 8)} QSR on its node.` }
-        : { state: 'no', title: 'It holds nothing', detail: 'An unlock or a reclaim sends no funds and will work; a Create needs a balance. Fund it from Alice below.' },
+        : { state: 'no', title: 'It holds nothing', detail: 'A Create needs a balance. Fund it from Alice below.' },
     )
     list.push(
       account.plasma > 0
         ? { state: 'ok', title: 'It has plasma', detail: `${account.plasma.toLocaleString('en')} of ${account.maxPlasma.toLocaleString('en')}. Its blocks need no proof of work.` }
-        : { state: 'unknown', title: 'It has no plasma', detail: 'Syrius will mine proof of work for each block, which takes a minute or more in a browser. Fuse QSR for it from Alice below to skip that.' },
+        : { state: 'unknown', title: 'It has no plasma', detail: 'Each block needs proof of work, a minute or more. Fuse QSR from Alice below to skip it.' },
     )
     if (account.unreceived > 0) {
-      list.push({ state: 'unknown', title: `${account.unreceived} block${account.unreceived === 1 ? '' : 's'} waiting to be received`, detail: 'Syrius publishes receive blocks once each time its dashboard is opened. Open the extension, or leave its dashboard and come back to it.' })
+      list.push({ state: 'unknown', title: `${account.unreceived} block${account.unreceived === 1 ? '' : 's'} waiting to be received`, detail: 'Open the Syrius dashboard to receive them.' })
     }
   }
   return list
@@ -180,7 +180,7 @@ const balance = (address: string, zts: string) => formatUnits(state.accounts[add
 <template>
   <h1 class="bench-title">Syrius and accounts</h1>
   <p class="bench-lede">
-    Syrius signs any account block a page hands it, and a ptlc call is an account block. So the extension can make all four calls without knowing the contract exists. This bench is where it gets connected, checked and funded.
+    Syrius can make all four calls. Connect, check and fund it here.
   </p>
 
   <section class="panel">
@@ -209,16 +209,16 @@ const balance = (address: string, zts: string) => formatUnits(state.accounts[add
     <h2 class="section-title">The wallet decides the node</h2>
     <div class="prose small">
       <p>
-        Connecting Syrius moves this page onto the wallet's node, whatever the node menu says, and disconnecting moves it back. A wallet publishes what it signs to its own node; a page that read a different one would show a block as never arriving, or worse, show another chain's entries beside a signature made for this one.
+        Connecting Syrius moves this page onto the wallet's node; disconnecting moves it back.
       </p>
       <p>
-        So the node is chosen in Syrius. For a devnet on this machine: Settings, the node list, add <HexValue :value="DEFAULT_NODE" full />, and take the chain id Syrius reads from it. In v0.4.0 stay on the network called Zenon Mainnet, which is the one that uses that list; the network called Zenon Devnet is a different chain 69, and the page will follow Syrius there too and tell you whether the ptlc contract exists on it.
+        For a devnet on this machine: in the Syrius node list add <HexValue :value="DEFAULT_NODE" full /> and take the chain id it reads. In v0.4.0 stay on the network called Zenon Mainnet.
       </p>
       <p>
-        The chain in this page is not a node a wallet can dial, so Syrius cannot sign for it. The keys the page holds can.
+        Syrius cannot sign for the chain in this page. The page's keys can.
       </p>
       <p>
-        To have funds on a devnet without asking Alice, import the devnet mnemonic into Syrius and pick index 1 or 3; then Syrius is the same account as that key here, and the two should not sign at the same moment.
+        Or import the devnet mnemonic into Syrius and pick index 1 or 3.
       </p>
     </div>
   </section>
@@ -227,16 +227,16 @@ const balance = (address: string, zts: string) => formatUnits(state.accounts[add
     <h2 class="section-title">What approving a block looks like</h2>
     <div class="prose small">
       <p>
-        Every block opens Syrius's approval window. Since v0.3.4 that window lists the decoded arguments of a call to a contract it knows. ptlc is not one of them, so the window names the contract as <strong>unrecognized</strong> and warns that “this wallet cannot fully interpret this call or its data”, above the raw block. That is the expected screen, not a fault. Compare the destination, the amount and the data with the call preview on the bench that sent it: they are the same bytes.
+        Syrius shows the contract as <strong>unrecognized</strong>, with a warning. That is expected. Compare the destination, amount and data with the call preview.
       </p>
       <p>
-        An approval is for one block, lasts 30 minutes, and belongs to this page as it is now. Reloading the page, or leaving it, cancels it. Moving between benches does not.
+        An approval is for one block and lasts 30 minutes. Reloading the page cancels it.
       </p>
       <p>
-        After a window that was declined or closed, Syrius will not raise another for the same site for 30 seconds: a request inside that time is refused at once, with no window. The lab holds such a request and makes it again when the time is up, and says so in the list on the right. An approved block buys the next request an immediate window, so a run of approvals is not slowed.
+        After a declined window Syrius waits 30 seconds before raising another. The page retries by itself.
       </p>
       <p>
-        Syrius reads the account's frontier when the window opens and signs exactly what it showed. If another block lands on that account while you are reading, the node refuses the one you approve, and the call is simply made again.
+        If another block lands on the account while you read, the node refuses yours. Send it again.
       </p>
     </div>
   </section>
@@ -244,7 +244,7 @@ const balance = (address: string, zts: string) => formatUnits(state.accounts[add
   <section class="panel">
     <h2 class="section-title">What Syrius will not sign</h2>
     <p class="small prose">
-      A key lock opens with a signature over a 32-byte digest. Syrius's <code>signMessage</code> signs the bytes of a text, and refuses any text of exactly 32 bytes, because a block hash is 32 bytes and signing one would be signing a transaction. So the key of a Syrius account cannot be the lock of an Ed25519 entry opened through the extension. The lab's own keys hold those secrets, and Syrius sends the block that carries the signature.
+      Syrius will not sign a 32-byte message, so its key cannot be an Ed25519 lock. The page's keys hold those secrets, and Syrius sends the block.
     </p>
     <div class="btn-row" style="margin-top: 10px">
       <button type="button" class="btn" :disabled="!w.address || sign.busy" @click="trySign('ptlc lab: a 32-byte message here')">Ask it to sign 32 bytes</button>
@@ -307,7 +307,7 @@ const balance = (address: string, zts: string) => formatUnits(state.accounts[add
       </table>
     </div>
     <p class="small" style="margin-top: 10px; max-width: 70ch">
-      Funding sends 100 ZNN and 1,000 QSR from Alice. Fusing locks 200 of Alice's QSR as plasma for the account, enough for its blocks to need no proof of work. A send is not a balance: the account has to publish a receive block, which a lab key does with Receive and Syrius does each time its dashboard is opened.
+      Funding sends 100 ZNN and 1,000 QSR from Alice. Fusing locks 200 of her QSR as plasma. The account still has to receive what was sent.
     </p>
     <p v-if="error" class="note bad" style="margin-top: 10px" role="alert">{{ error }}</p>
   </section>

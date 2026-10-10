@@ -26,13 +26,13 @@ import RawRpc from './views/RawRpc.vue'
 import Wallet from './views/Wallet.vue'
 
 const benches = [
-  { path: '', name: 'Start here', sub: 'what is running, and the ways in', view: Overview },
+  { path: '', name: 'Start here', sub: 'what is running', view: Overview },
   { path: 'secrets', name: 'Secrets and points', sub: 'keys, scalars, tweaks, adaptors', view: Secrets },
-  { path: 'lock', name: 'Lock funds', sub: 'Create, with any of the three locks', view: LockFunds },
+  { path: 'lock', name: 'Lock funds', sub: 'Create', view: LockFunds },
   { path: 'entries', name: 'Entries', sub: 'unlock, proxy unlock, reclaim', view: Entries },
   { path: 'swap', name: 'Swap, step by step', sub: 'two tweaked point locks', view: Swap },
-  { path: 'rpc', name: 'Raw RPC', sub: 'the node, call by call', view: RawRpc },
-  { path: 'wallet', name: 'Syrius and accounts', sub: 'the extension, balances, plasma', view: Wallet },
+  { path: 'rpc', name: 'Raw RPC', sub: 'call the node', view: RawRpc },
+  { path: 'wallet', name: 'Syrius and accounts', sub: 'wallet and balances', view: Wallet },
 ] as const
 
 const read = () => window.location.hash.replace(/^#\/?/, '').split('/')
@@ -74,14 +74,14 @@ const param = computed(() => route.value[1] ?? '')
            whole window, unlike the benches above, so it is set apart. -->
       <a class="away" href="#/scenarios">
         Scenarios page<Icon name="arrow" :size="14" />
-        <small>every case, run at a button</small>
+        <small>every case, one button</small>
       </a>
     </nav>
 
 
     <main class="main">
       <p v-if="node.kind === 'sim' && node.fellBack" class="note warn" style="margin-bottom: 18px">
-        No node answered at the default address, so this is running on the chain the page carries: go-zenon's own chain and contracts in this tab, from the devnet's genesis. Everything works; nothing here is on a network. The node menu in the bar picks another.
+        No node answered at the default address, so this runs on the chain in this page. The node menu picks another.
       </p>
       <p v-else-if="node.kind === 'sim' && node.sim === 'failed'" class="note bad" style="margin-bottom: 18px" role="alert">
         The chain in this page did not load: {{ node.simError }}

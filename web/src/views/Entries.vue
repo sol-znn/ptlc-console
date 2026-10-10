@@ -65,7 +65,7 @@ async function askNode() {
     const info = await client.ptlcById(id.value)
     rpc.answer = info
       ? JSON.stringify(info, null, 2)
-      : 'data non existent\n\nThe node says this for an entry that was never made, and equally for one that was paid or returned. Only the contract\'s chain tells them apart.'
+      : 'data non existent\n\nNever made, paid, or returned.'
   } catch (err) {
     rpc.answer = errorText(err)
   } finally {
@@ -134,7 +134,7 @@ const openVerdicts = computed<Verdict[]>(() => {
       : left > 0
         ? {
             ok: false,
-            text: `Only ${span(left)} left by the chain's clock, under the ${span(REVEAL_MARGIN)} the lab's other clients insist on. The contract answers an unlock two momentums after it is sent; answered after the expiry it is refused, and the witness in it is public all the same.`,
+            text: `Only ${span(left)} left by the chain's clock, under the ${span(REVEAL_MARGIN)} the lab's other clients insist on. A late unlock is refused and still shows the witness.`,
           }
         : { ok: false, text: `Expired ${span(left)} ago. The contract refuses an unlock at or after the expiry.` },
   )
@@ -248,7 +248,7 @@ const heldWitness = (e: Entry) => !!e.witness && state.secrets.some((s) => s.sec
 <template>
   <h1 class="bench-title">Entries</h1>
   <p class="bench-lede">
-    Read off the contract's chain, so an entry made by the CLI or a scenario is here the same as one made on this page.
+    Every entry on the contract's chain.
   </p>
 
   <!-- one entry -->
@@ -263,7 +263,7 @@ const heldWitness = (e: Entry) => !!e.witness && state.secrets.some((s) => s.sec
         <dt>State</dt>
         <dd>
           <span class="tag" :class="[entry.state, { expired: expired(entry) }]">{{ stateLabel(entry) }}</span>
-          <span v-if="expired(entry)" class="small"> still held by the contract; only its creator can take it back</span>
+          <span v-if="expired(entry)" class="small"> only its creator can take it back</span>
         </dd>
         <dt>Holds</dt>
         <dd><strong>{{ formatAmount(entry.amount, entry.tokenStandard) }}</strong></dd>
@@ -305,7 +305,7 @@ const heldWitness = (e: Entry) => !!e.witness && state.secrets.some((s) => s.sec
           </dd>
         </dl>
         <p v-if="entry.pointType === POINT_SECP256K1 && entry.witness" class="note" style="margin-top: 8px">
-          This is what a swap counterparty reads: the scalar is now public, and with the tweak they agreed it opens the other leg.
+          The scalar is now public.
         </p>
       </div>
 
@@ -319,14 +319,14 @@ const heldWitness = (e: Entry) => !!e.witness && state.secrets.some((s) => s.sec
 
     <template v-else>
       <p v-if="pending && ['signing', 'published', 'confirmed'].includes(pending.stage)" class="note warn">
-        The Create is on its way: the contract makes the entry when it answers the block, a momentum or two after it was published. This page updates when it does.
+        The Create is on its way.
       </p>
       <p v-else-if="pending && pending.stage === 'refused'" class="note bad">
         The contract refused this Create, so no entry was made. {{ pending.error }}
       </p>
       <p v-else-if="!isHex(id, 32)" class="note bad">An entry id is the 32-byte hash of its Create block, in hex.</p>
       <p v-else class="note">
-        No accepted Create with this hash is on the contract's chain. It may be on another chain, or still in the pool.
+        No accepted Create with this hash is on this chain.
       </p>
     </template>
 
@@ -353,7 +353,7 @@ const heldWitness = (e: Entry) => !!e.witness && state.secrets.some((s) => s.sec
         <label>
           <input type="radio" name="mode" value="proxy" v-model="open.mode" />
           <strong>ProxyUnlock</strong>
-          <small>Pays an address you name. Anyone may send it, with no funds of their own.</small>
+          <small>Pays an address you name. Anyone may send it.</small>
         </label>
       </div>
 
@@ -389,10 +389,10 @@ const heldWitness = (e: Entry) => !!e.witness && state.secrets.some((s) => s.sec
         <li v-for="v in openVerdicts" :key="v.text" :class="{ no: !v.ok }">{{ v.text }}</li>
       </ul>
       <p v-if="lateReveal" class="note bad">
-        Too close to the expiry to know the answer. If the contract runs it after the expiry it refuses, and whoever reads the chain has the witness anyway: for a point lock, the secret that may open the other side of a swap. It can be sent all the same; nothing else here will.
+        Too close to the expiry. A late unlock is refused and still shows the witness.
       </p>
       <p v-else class="note" :class="allOk(openVerdicts) ? 'good' : 'warn'">
-        {{ allOk(openVerdicts) ? 'The contract should accept this and pay the entry out.' : 'The contract should refuse this. It can be sent all the same: nothing moves, and the refusal lands on the tape.' }}
+        {{ allOk(openVerdicts) ? 'The contract should accept this.' : 'The contract should refuse this. Nothing moves if it is sent.' }}
       </p>
 
       <CallPreview

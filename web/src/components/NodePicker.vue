@@ -85,14 +85,14 @@ onBeforeUnmount(() => {
 
     <div v-if="open" class="np-panel" role="dialog" aria-label="The node this page reads">
       <p v-if="byWallet" class="np-note wallet">
-        <strong>Syrius is connected, so the page reads its node:</strong> <code>{{ node.url }}</code>. A wallet publishes what it signs to its own node, and a page reading another would never see it. Change the node in Syrius; the pick below comes back when it disconnects.
+        <strong>Syrius is connected, so the page reads its node:</strong> <code>{{ node.url }}</code>. Change the node in Syrius.
       </p>
       <p v-if="node.problem" class="np-note bad" role="alert">{{ node.problem }}</p>
       <p v-else-if="down && node.kind === 'remote'" class="np-note bad" role="alert">
         {{ short(node.url) }} is not answering: {{ down }}
       </p>
       <p v-if="node.fellBack && node.kind === 'sim'" class="np-note">
-        Nothing answered at <code>{{ DEFAULT_NODE }}</code>, so the page is on the chain it carries. Start a devnet and pick it below, or pick another node.
+        Nothing answered at <code>{{ DEFAULT_NODE }}</code>. The page is on its own chain.
       </p>
 
       <fieldset :disabled="byWallet">
@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
           <span>
             <strong>The chain in this page</strong>
             <small>
-              go-zenon's own chain and contracts, compiled to WebAssembly and started from the devnet's genesis in this tab. No node, no network. It is gone when the tab is reloaded.
+              go-zenon as WebAssembly, in this tab. Gone on reload.
             </small>
           </span>
         </label>
@@ -128,7 +128,7 @@ onBeforeUnmount(() => {
             </label>
             <button type="button" class="btn btn-quiet" :disabled="stepping" @click="step">One momentum now</button>
             <small>
-              Each momentum moves the chain's clock ten seconds, whatever the pace, so a deadline four minutes out is twenty-four momentums away.
+              Each momentum is ten seconds of chain time, whatever the pace.
               <template v-if="node.build"> Built from go-zenon <code>{{ node.build.commit.slice(0, 7) }}</code>.</template>
             </small>
           </template>
@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
               <button type="button" class="btn btn-quiet" @click="pickCustom">Use it</button>
             </span>
             <small>
-              A WebSocket address needs nothing of the node. An HTTP one works only if the node allows this page's origin.
+              HTTP works only if the node allows this page's origin.
               <button type="button" class="np-link" @click="pickLab">Use the public lab's devnet, {{ short(PUBLIC_LAB_NODE) }}</button>
             </small>
           </span>
@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
         Connecting Syrius on <a href="#/wallet" @click="open = false">Syrius and accounts</a> overrides this: the page then reads the wallet's node.
       </p>
       <p v-if="noWallet" class="np-foot">
-        The scenarios sign with the devnet's published keys, so they need a chain where those hold funds: a go-zenon devnet, or the chain in this page. The console reads the same node, so every block a scenario sends is on its tape.
+        The scenarios sign with devnet keys, so they need a go-zenon devnet or the chain in this page.
       </p>
     </div>
   </div>

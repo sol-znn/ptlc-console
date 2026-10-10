@@ -200,7 +200,7 @@ const aliceChecks = computed<Check[]>(() => {
       text:
         left >= REVEAL_MARGIN
           ? `It has ${span(left)} left by the chain's clock.`
-          : `It has ${left > 0 ? span(left) : 'no time'} left. A call answered after the expiry is refused with t in it all the same, and Bob could take his ZNN back and her QSR too. She does not send it.`,
+          : `It has ${left > 0 ? span(left) : 'no time'} left. A late call is refused and still shows t. She does not send it.`,
     },
   ]
 })
@@ -261,7 +261,7 @@ const bobLocks = () =>
     const expiry = chainNow() + Math.round(swap.bobMinutes * 60)
     if (aliceEntry.value!.expirationTime - expiry < MARGIN) {
       throw new Error(
-        `Alice's entry would outlast this one by ${span(aliceEntry.value!.expirationTime - expiry)}. Bob needs at least ${span(MARGIN)} after t comes out, or Alice could reclaim hers before he claims it. Start over with a longer expiry for Alice.`,
+        `Alice's entry would outlast this one by ${span(aliceEntry.value!.expirationTime - expiry)}. Bob needs at least ${span(MARGIN)}. Start over with a longer expiry for Alice.`,
       )
     }
     const data = packCreate(expiry, POINT_SECP256K1, fromHex(T.value), alice.value.address!)
@@ -322,7 +322,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
 <template>
   <h1 class="bench-title">Swap, step by step</h1>
   <p class="bench-lede">
-    Alice sells QSR for Bob's ZNN. She holds a secret <code>t</code>; they agree a tweak <code>d</code>. She locks to <code>T + d·G</code> first, Bob locks to <code>T</code> for less time, and her claim publishes the scalar that lets Bob make his. On chain the two entries share nothing.
+    Alice sells QSR for Bob's ZNN. She locks to <code>T + d·G</code> first, Bob locks to <code>T</code> for less time, and her claim publishes the scalar that lets Bob make his.
   </p>
 
   <details class="panel">
@@ -370,7 +370,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
       </label>
     </div>
     <p class="small" style="margin-top: 8px">
-      Short expiries are what make the refund watchable: set Alice's to 6 and Bob's to 2, stop after step 3, and both entries can be reclaimed within minutes, Bob's first. The CLI cannot go below an hour.
+      To watch a refund, set Alice's to 6 and Bob's to 2 and stop after step 3.
     </p>
     <p v-if="termsProblem" class="note bad" style="margin-top: 10px">{{ termsProblem }}</p>
   </section>
@@ -381,7 +381,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
         <h2 class="section-title">Alice makes t, and they agree d</h2>
         <span class="tag" :class="tagFor(stepState.s1)">{{ labelFor(stepState.s1) }}</span>
       </div>
-      <p class="small prose">Off chain. In a real swap this is the first message between two wallets; here both halves are in one browser.</p>
+      <p class="small prose">Off chain.</p>
       <dl v-if="started" class="kv" style="margin-top: 10px">
         <dt>T = t·G</dt>
         <dd><HexValue :value="T" full /></dd>
@@ -403,7 +403,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
         <span class="tag" :class="tagFor(stepState.s2)">{{ labelFor(stepState.s2) }}</span>
       </div>
       <p class="small prose">
-        Alice goes first because she holds <code>t</code>. If Bob locked first she could take his ZNN with <code>t</code> and never lock anything, or wait out her own entry, take it back, and take his after. Her entry is opened by <code>t + d</code>, which Bob can work out only once she has shown <code>t</code>.
+        Alice goes first because she holds <code>t</code>. Bob can work out <code>t + d</code> only once she has shown it.
       </p>
       <template v-if="aliceEntry">
         <p class="small" style="margin-top: 8px">
@@ -413,7 +413,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
       </template>
       <p v-else-if="refusedCreate(swap.aliceEntry)" class="note bad" style="margin-top: 8px">{{ refusedCreate(swap.aliceEntry)!.error }} Start over.</p>
       <p v-else-if="pendingCreate(swap.aliceEntry)" class="note warn" style="margin-top: 8px">
-        <span class="working">Published.</span> The entry exists once the contract answers, a momentum or two from now.
+        <span class="working">Published.</span>
       </p>
       <div v-else-if="stepState.s2 === 'now'" class="btn-row" style="margin-top: 12px">
         <button type="button" class="btn btn-primary" :disabled="!!busy || !!termsProblem || !!alice.blocked" @click="aliceLocks">
@@ -429,7 +429,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
         <span class="tag" :class="tagFor(stepState.s3)">{{ labelFor(stepState.s3) }}</span>
       </div>
       <p class="small prose">
-        Bob's entry ends first. Whenever Alice claims it, and so shows <code>t</code>, hers is still open to him for at least {{ span(MARGIN) }}.
+        Bob's entry ends first, so Alice's stays open to him for at least {{ span(MARGIN) }} after she claims.
       </p>
       <ul v-if="bobChecks.length && stepState.s3 !== 'done'" class="checks">
         <li v-for="c in bobChecks" :key="c.text" :class="{ no: !c.ok }">{{ c.text }}</li>
@@ -458,13 +458,13 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
         <span class="tag" :class="tagFor(stepState.s4)">{{ labelFor(stepState.s4) }}</span>
       </div>
       <p class="small prose">
-        This is the moment the swap commits. Her call carries <code>t</code> in the clear, so from here Bob can take her QSR whether or not she wants him to. She must send it at least {{ span(REVEAL_MARGIN) }} before Bob's entry expires<template v-if="bobEntry && bobEntry.state === 'locked'">, {{ left(bobEntry) > 0 ? `${span(left(bobEntry))} from now` : 'which has already happened' }}</template>: a call the contract answers after that is refused, and gives <code>t</code> away all the same.
+        This commits the swap: her call shows <code>t</code>. She must send it at least {{ span(REVEAL_MARGIN) }} before Bob's entry expires<template v-if="bobEntry && bobEntry.state === 'locked'">, {{ left(bobEntry) > 0 ? `${span(left(bobEntry))} from now` : 'which has already happened' }}</template>.
       </p>
       <ul v-if="aliceChecks.length && stepState.s4 !== 'done'" class="checks">
         <li v-for="c in aliceChecks" :key="c.text" :class="{ no: !c.ok }">{{ c.text }}</li>
       </ul>
       <p v-if="stepState.s4 === 'now' && waiting('aliceUnlocks')" class="note warn" style="margin-top: 10px">
-        <span class="working">Published.</span> From this moment t is public. Waiting for the contract to pay her.
+        <span class="working">Published.</span> t is now public.
       </p>
       <div v-else-if="stepState.s4 === 'now' && !swap.abandoned" class="btn-row" style="margin-top: 12px">
         <button type="button" class="btn btn-primary" :disabled="!!busy || !!alice.blocked || !aliceChecks.every((c) => c.ok)" @click="aliceUnlocks">
@@ -483,7 +483,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
         <span class="tag" :class="tagFor(stepState.s5)">{{ labelFor(stepState.s5) }}</span>
       </div>
       <p class="small prose">
-        He reads the contract's chain, not Alice's: the unlock could have been sent by anyone. He takes only the witness of the unlock the contract accepted, and checks it against <code>T</code> before using it; a refused call with a junk witness is anyone's to send. Nothing passes between the two of them at this step.
+        He takes the witness of the unlock the contract accepted, and checks it against <code>T</code> first.
       </p>
       <dl v-if="revealed" class="kv" style="margin-top: 10px">
         <dt>t, from the chain</dt>
@@ -502,7 +502,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
           {{ busy === 'bobUnlocks' ? 'Signing' : `Unlock as ${bob.name} with t + d` }}
         </button>
         <span v-if="left(aliceEntry) > 0" class="small">Alice's entry is open to him for {{ span(left(aliceEntry)) }} more.</span>
-        <span v-else class="small">Alice's entry has expired. With the expiries in this order that takes Bob more than {{ span(MARGIN) }} of not claiming.</span>
+        <span v-else class="small">Alice's entry has expired.</span>
       </div>
       <p v-if="stepState.s5 === 'done'" class="small" style="margin-top: 8px">
         Paid to <Who :address="aliceEntry!.paidTo ?? ''" />.
@@ -516,7 +516,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
       Alice has Bob's ZNN and Bob has Alice's QSR. The chain shows two entries, locked to
       <span class="data">{{ short(T, 8, 6) }}</span> and <span class="data">{{ short(Tprime, 8, 6) }}</span>, opened with two different scalars. Without <code>d</code>, nothing ties them together.
     </p>
-    <p class="small" style="margin-top: 8px">A payout is an unreceived block until its destination publishes a receive.</p>
+    <p class="small" style="margin-top: 8px">A payout waits until its destination receives it.</p>
     <div class="btn-row" style="margin-top: 10px">
       <button v-if="swap.alice !== 'syrius'" type="button" class="btn" :disabled="!!busy" @click="collect(swap.alice)">Receive for {{ alice.name }}</button>
       <button v-if="swap.bob !== 'syrius'" type="button" class="btn" :disabled="!!busy" @click="collect(swap.bob)">Receive for {{ bob.name }}</button>
@@ -527,7 +527,7 @@ const others = (id: SignerId) => signerIds.filter((s) => s !== id)
   <section v-if="swap.abandoned && !done" class="panel">
     <h2 class="section-title">{{ unwound ? 'Unwound' : 'Walking away' }}</h2>
     <p class="prose small">
-      Alice never showed <code>t</code>, so nobody can open either entry. Each creator takes their own back once it expires, with no help from the other. Alice waits longer, which is the price of holding the secret: her entry had to outlast Bob's.
+      Alice never showed <code>t</code>, so each creator takes their own entry back once it expires.
     </p>
     <div class="table-scroll" style="margin-top: 10px">
       <table class="grid">

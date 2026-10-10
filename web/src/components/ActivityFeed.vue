@@ -62,7 +62,7 @@ const items = computed(() => state.activity.slice(0, 12))
   <section class="feed" aria-label="Blocks sent from this page">
     <h2 class="section-title">Sent from this page</h2>
     <p v-if="items.length === 0" class="small empty">
-      Nothing yet. Lock funds from the Lock funds bench, or run the swap, and each block is followed here until the contract answers it.
+      Nothing yet.
     </p>
     <TransitionGroup name="land" tag="ol">
       <li v-for="a in items" :key="a.n" :class="a.stage">
@@ -80,7 +80,7 @@ const items = computed(() => state.activity.slice(0, 12))
         <p v-if="a.note" class="small">{{ a.note }}</p>
         <p v-if="took(a)" class="small faint">{{ took(a) }}</p>
         <p v-if="overdue(a)" class="small err">
-          {{ overdue(a) }} momentums and no answer. The contract answers in the momentum after the call when every pillar has the block; a wait like this means some do not. <a href="#/">Start here</a> shows the node's peers.
+          {{ overdue(a) }} momentums and no answer; a pillar may not have the block. <a href="#/">Start here</a> shows the peers.
         </p>
       </li>
     </TransitionGroup>

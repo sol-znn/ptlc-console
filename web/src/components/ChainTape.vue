@@ -55,7 +55,7 @@ function ago(timestamp: number): string {
       <span class="small faint">height {{ state.scanHeight }}</span>
     </div>
     <p v-if="state.spork === false" class="note bad">
-      The ptlc spork is not active on this chain, so the contract address accepts nothing. A devnet on the ptlc branch activates it in genesis, and so does the chain in this page; this node is something else.
+      The ptlc spork is not active on this chain.
     </p>
     <p v-else-if="events.length === 0" class="small empty">
       No call has reached the contract on this chain yet.

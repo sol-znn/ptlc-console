@@ -114,13 +114,13 @@ const warnings = computed(() => {
     list.push(`${signer.value.name} holds ${formatUnits(balance.value, token.value.decimals)} ${token.value.symbol}; the node will refuse a block that sends more.`)
   }
   if (form.expiryValue * form.expiryUnit < 60) {
-    list.push('A contract call is answered a momentum or two after it is sent, 15 to 30 s here. An expiry this close may have passed by then, and the Create would be refused.')
+    list.push('An expiry this close may pass before the contract answers, and the Create would be refused.')
   }
   if (form.lockSource === 'paste' && lockHex.value && !state.secrets.some((s) => s.lock === lockHex.value)) {
-    list.push('This browser does not hold the secret for that lock. Whoever does can open the entry; you will only be able to reclaim it.')
+    list.push('This browser does not hold the secret for that lock. You will only be able to reclaim it.')
   }
   if (isAddress(destination.value) && destination.value === signer.value.address) {
-    list.push('The entry pays its own creator. That works, and is only useful for trying the calls.')
+    list.push('The entry pays its own creator.')
   }
   return list
 })
@@ -142,8 +142,8 @@ const cli = computed(() => {
 })
 const cliNote = computed(() =>
   cli.value
-    ? `Signed by whichever keystore index the CLI is run with. The CLI adds the hours to the frontier momentum's timestamp, as this page does.`
-    : 'znn-cli takes the expiry in whole hours, from 1 to 168. This entry expires sooner than that, which only the page and the Go client can ask for.',
+    ? `Signed by whichever keystore index the CLI is run with.`
+    : 'znn-cli takes the expiry in whole hours, 1 to 168. This entry expires sooner.',
 )
 
 const sending = ref(false)
@@ -174,7 +174,7 @@ async function send() {
 <template>
   <h1 class="bench-title">Lock funds</h1>
   <p class="bench-lede">
-    Create sends funds to the contract with a lock, an expiry and, for a point lock, the one address it pays. The hash of the block that carries it is the entry's id.
+    Create sends funds to the contract with a lock, an expiry and, for a point lock, the address it pays. The block's hash is the entry's id.
   </p>
 
   <section class="panel">
@@ -213,7 +213,7 @@ async function send() {
       </label>
     </div>
     <p class="small" style="margin-top: 6px">
-      Unlockable until, and reclaimable from, <strong>{{ clock(expirationTime, state.now) }}</strong> by the chain's clock, {{ span(form.expiryValue * form.expiryUnit) }} after the frontier momentum. The page reads that timestamp again when you press the button.
+      Unlockable until, and reclaimable from, <strong>{{ clock(expirationTime, state.now) }}</strong> by the chain's clock, {{ span(form.expiryValue * form.expiryUnit) }} after the frontier momentum.
     </p>
   </section>
 
@@ -255,10 +255,10 @@ async function send() {
         <option value="zero" :disabled="form.pointType === 2">any address the signature names</option>
       </select>
       <span class="hint" v-if="form.pointType === 2">
-        A point lock must name its destination. Its witness is a bare scalar, public one momentum before the contract acts on it; with no fixed destination anyone who saw it could claim first.
+        A point lock must name its destination: its scalar is public before the contract acts on it.
       </span>
       <span class="hint" v-else>
-        A key lock may leave the destination open: the signature names it, and can only pay the address it names.
+        A key lock may leave the destination open: the signature names it.
       </span>
     </label>
     <label v-if="form.destination === 'custom'" class="field">
@@ -292,7 +292,7 @@ async function send() {
     </div>
     <p v-if="error" class="note bad" style="margin-top: 10px" role="alert">{{ error }}</p>
     <p v-if="sent?.hash" class="note good" style="margin-top: 10px">
-      Published. The entry's id is the block's hash, <a :href="`#/entries/${sent.hash}`" class="data">{{ sent.hash.slice(0, 16) }}…</a>, and it exists once the contract has answered: follow it on the right.
+      Published. The entry's id is the block's hash, <a :href="`#/entries/${sent.hash}`" class="data">{{ sent.hash.slice(0, 16) }}…</a>.
     </p>
   </section>
 </template>

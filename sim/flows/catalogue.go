@@ -69,12 +69,12 @@ type group struct {
 }
 
 var groups = []group{
-	{"locks", "Three ways to lock funds", "Funds go into the contract and come out for whoever can open the lock. There are three kinds of lock."},
-	{"safety", "What the contract refuses", "A lock is only useful if nobody else can open it. Each of these tries something that must not work, and passes when it does not."},
-	{"time", "Deadlines", "Every lock has a deadline. Before it, only the right secret or signature opens the lock. After it, only the owner can take the funds back."},
-	{"swaps", "Swaps without a middleman", "Two people each lock funds for the other. Opening one lock is what makes the other one openable, so either both get paid or both get their funds back. That holds only in one order: whoever holds the secret locks first, and their lock lasts longer. The last swap here does it without the secret ever being shown."},
-	{"mistakes", "Mistakes the contract cannot stop", "The contract does exactly what each call asks. These are ways to lose funds anyway, by asking in the wrong order, too late, or for a lock the contract does not look at closely enough. The lab's own clients refuse each of them."},
-	{"bitcoin", "Bitcoin", "The same lock, with real Bitcoin transactions on the other side. This is the swap the zBTC proof of concept is built on."},
+	{"locks", "Three ways to lock funds", "Funds come out for whoever can open the lock. There are three kinds."},
+	{"safety", "What the contract refuses", "Each tries something that must not work, and passes when it does not."},
+	{"time", "Deadlines", "Before the deadline only the right secret or signature opens a lock. After it, only the owner takes the funds back."},
+	{"swaps", "Swaps without a middleman", "Opening one lock makes the other openable, so both get paid or both get refunded. Whoever holds the secret locks first, for longer."},
+	{"mistakes", "Mistakes the contract cannot stop", "Valid calls in the wrong order or too late. The lab's clients refuse each of them."},
+	{"bitcoin", "Bitcoin", "The same lock, with real Bitcoin transactions on the other side."},
 }
 
 func call(id, from, label, expect string) step {
@@ -105,7 +105,7 @@ var scenarios = []*scenario{
 	// ---- locks ---------------------------------------------------------------
 	{
 		ID: "secret", Group: "locks", Title: "Unlock with a secret",
-		Shows:   "Alice locks 1 ZNN for Bob. Bob opens the lock with a secret number and is paid.",
+		Shows:   "Bob opens the lock with a secret number and is paid.",
 		Parties: []string{alice, bob, contract}, Seconds: 60,
 		Steps: []step{
 			local("secret", alice, "Alice makes a secret and the lock that fits it"),
@@ -118,7 +118,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "wallet-key", Group: "locks", Title: "Unlock with a Zenon wallet signature",
-		Shows:   "Alice locks 1 ZNN to Bob's own wallet key. Bob signs with it and is paid. No secret ever appears on the chain.",
+		Shows:   "Bob signs with his own wallet key. No secret appears on the chain.",
 		Parties: []string{alice, bob, contract}, Seconds: 60,
 		Steps: []step{
 			call("lock", alice, "Alice locks 1 ZNN to Bob's wallet key", accepted),
@@ -130,7 +130,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "bitcoin-key", Group: "locks", Title: "Unlock with a Bitcoin-style signature",
-		Shows:   "The lock is a Bitcoin Taproot key. A signature Bitcoin itself would accept opens it, which is what lets a lock here be tied to one on Bitcoin.",
+		Shows:   "The lock is a Bitcoin Taproot key, opened by a signature Bitcoin would accept.",
 		Parties: []string{alice, bob, contract}, Seconds: 60,
 		Steps: []step{
 			local("key", bob, "Bob makes a Bitcoin-style key"),
@@ -143,7 +143,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "relay", Group: "locks", Title: "Someone else delivers the unlock",
-		Shows:   "Bob signs but does not send anything himself. Carol delivers his signature. The 1 ZNN goes to Bob, because that is who the signature names.",
+		Shows:   "Carol delivers Bob's signature. Bob is paid, because the signature names him.",
 		Parties: []string{alice, bob, carol, contract}, Seconds: 60,
 		Steps: []step{
 			call("lock", alice, "Alice locks 1 ZNN to Bob's key", accepted),
@@ -158,7 +158,7 @@ var scenarios = []*scenario{
 	// ---- safety --------------------------------------------------------------
 	{
 		ID: "wrong-secret", Group: "safety", Title: "A wrong secret is refused",
-		Shows:   "Bob tries a wrong secret and gets nothing. The lock stays shut and still opens with the right one.",
+		Shows:   "A wrong secret gets nothing, and the right one still works.",
 		Parties: []string{alice, bob, contract}, Seconds: 90,
 		Steps: []step{
 			local("secret", alice, "Alice makes a secret and its lock"),
@@ -171,7 +171,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "stolen-signature", Group: "safety", Title: "A copied signature pays only its owner",
-		Shows:   "Carol copies Bob's signature and asks to be paid herself. It is refused: the signature says who gets the funds.",
+		Shows:   "Carol copies Bob's signature and asks to be paid. Refused.",
 		Parties: []string{alice, bob, carol, contract}, Seconds: 90,
 		Steps: []step{
 			call("lock", alice, "Alice locks 1 ZNN to Bob's key", accepted),
@@ -184,7 +184,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "front-run", Group: "safety", Title: "A stolen secret is useless",
-		Shows:   "A secret becomes public the moment it is used. So a secret lock must name who gets paid, and it pays nobody else, even someone who knows the secret.",
+		Shows:   "A secret lock pays only the address it names, even to someone who knows the secret.",
 		Parties: []string{alice, bob, carol, contract}, Seconds: 90,
 		Steps: []step{
 			turnedAway("open", alice, "Alice tries a secret lock that names nobody", "invalid destination"),
@@ -197,7 +197,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "once", Group: "safety", Title: "A lock pays once",
-		Shows:   "After Bob is paid, the same secret sent again does nothing. The entry is gone.",
+		Shows:   "After Bob is paid, the same secret does nothing.",
 		Parties: []string{alice, bob, contract}, Seconds: 90,
 		Steps: []step{
 			call("lock", alice, "Alice locks 1 ZNN for Bob", accepted),
@@ -209,7 +209,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "bad-locks", Group: "safety", Title: "Broken locks are turned away",
-		Shows:   "A lock nobody could ever open, a kind of lock the contract does not have, and a lock with nothing in it are not taken, so nothing leaves the account. A lock whose deadline has already passed is refused and refunded.",
+		Shows:   "Malformed locks are not taken. An expired one is refused and refunded.",
 		Parties: []string{alice, contract}, Seconds: 45,
 		Steps: []step{
 			turnedAway("impossible", alice, "Alice tries a lock to a key that cannot exist", "invalid point lock"),
@@ -222,7 +222,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "weak-key", Group: "safety", Title: "A key with no secret behind it is turned away",
-		Shows:   "Alice tries to lock 1 ZNN to a Zenon-style key that is a special point of the curve, one for which a signature anybody can write down checks out. The contract decodes the key, finds it is one of those points and does not take the lock, so nothing leaves her account.",
+		Shows:   "A key anyone could sign for is not taken as a lock.",
 		Parties: []string{alice, carol, contract}, Seconds: 15,
 		Steps: []step{
 			local("forge", carol, "Carol writes a signature without any key"),
@@ -232,7 +232,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "signed-elsewhere", Group: "safety", Title: "A signature made for somewhere else is refused",
-		Shows:   "Bob signs \"pay Bob\" for another Zenon network, and for another contract on this one. Both signatures are real and both are refused, because what Bob signs names the network and the contract. The one he makes for this lock pays him.",
+		Shows:   "Signatures made for another network or contract are refused.",
 		Parties: []string{alice, bob, contract}, Seconds: 110,
 		Steps: []step{
 			local("key", bob, "Bob makes a Bitcoin-style key"),
@@ -248,7 +248,7 @@ var scenarios = []*scenario{
 	// ---- time ----------------------------------------------------------------
 	{
 		ID: "deadline", Group: "time", Title: "After the deadline, the owner takes it back",
-		Shows:   "Before the deadline Alice cannot take her funds back. After it Bob can no longer unlock, a stranger cannot claim, and Alice can.",
+		Shows:   "Before the deadline Alice cannot take her funds back. After it, only she can.",
 		Parties: []string{alice, bob, carol, contract}, Seconds: 180,
 		Steps: []step{
 			call("lock", alice, "Alice locks 1 ZNN for Bob, for 100 seconds", accepted),
@@ -265,7 +265,7 @@ var scenarios = []*scenario{
 	// ---- swaps ---------------------------------------------------------------
 	{
 		ID: "swap", Group: "swaps", Title: "Swap ZNN for QSR",
-		Shows:   "Alice and Bob trade 10 QSR for 1 ZNN. Alice holds the secret, so she locks first and her lock lasts five minutes longer. Her taking the ZNN makes the secret public, and that is what lets Bob take the QSR. The two locks look unrelated on the chain.",
+		Shows:   "Alice and Bob trade 10 QSR for 1 ZNN. The two locks look unrelated on the chain.",
 		Parties: []string{alice, bob, contract}, Seconds: 150,
 		Steps: []step{
 			message("agree", alice, bob, "Alice sends Bob a lock only she can open"),
@@ -282,7 +282,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "swap-abandoned", Group: "swaps", Title: "A swap that stalls is undone",
-		Shows:   "Both lock, then Alice walks away. Nobody loses anything: after the deadlines each takes their own funds back, Bob first, because his lock was the shorter one.",
+		Shows:   "Alice walks away. Each takes their own funds back, Bob first.",
 		Parties: []string{alice, bob, contract}, Seconds: 240,
 		Steps: []step{
 			message("agree", alice, bob, "Alice sends Bob a lock only she can open"),
@@ -300,7 +300,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "swap-key", Group: "swaps", Title: "Swap with no secret on the chain",
-		Shows:   "The same trade on another kind of lock. Each locks to a fresh key of their own and names the other as the only one who can be paid. Each gives the other a signature with Alice's secret left out. Alice adds the secret to take the ZNN, and her finished signature is what tells Bob the secret. The chain shows two ordinary signatures and never the secret.",
+		Shows:   "The same trade with key locks. The secret never appears on the chain.",
 		Parties: []string{alice, bob, contract}, Seconds: 150,
 		Steps: []step{
 			message("agree", alice, bob, "Alice and Bob each make a fresh key and agree the trade"),
@@ -323,7 +323,7 @@ var scenarios = []*scenario{
 	// ---- mistakes ------------------------------------------------------------
 	{
 		ID: "wrong-order", Group: "mistakes", Title: "Locking first without the secret",
-		Shows:   "Bob locks first, though it is Alice who holds the secret. She takes his ZNN at once and never locks anything. Bob reads her secret and has nothing to open with it. Every call was valid; the order was the mistake, and the swap above does not make it.",
+		Shows:   "Bob locks first. Alice takes his ZNN and never locks anything.",
 		Parties: []string{alice, bob, contract}, Seconds: 75,
 		Steps: []step{
 			message("agree", alice, bob, "Alice sends Bob a lock only she can open"),
@@ -337,7 +337,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "late-reveal", Group: "mistakes", Title: "Showing the secret too late",
-		Shows:   "The swap in the right order, but Alice waits until Bob's deadline has passed before taking his ZNN. The contract refuses her, and her secret is public all the same: Bob takes his ZNN back and her QSR too. The lab's clients will not unlock with under a minute left.",
+		Shows:   "Alice claims after Bob's deadline. She is refused, and Bob takes both.",
 		Parties: []string{alice, bob, contract}, Seconds: 230,
 		Steps: []step{
 			message("agree", alice, bob, "Alice sends Bob a lock only she can open"),
@@ -355,7 +355,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "swap-key-open", Group: "mistakes", Title: "A key lock that does not say who it pays",
-		Shows:   "The swap with no secret on the chain, but Alice's lock names nobody and Bob does not check. The lock's key is hers, so she signs it back to herself, and then takes his ZNN as agreed. Bob works out the secret and finishes a signature for a lock that is gone. The lab's client refuses to lock against a key lock that does not name it.",
+		Shows:   "Alice's lock names nobody, so she signs it back to herself and takes Bob's ZNN too.",
 		Parties: []string{alice, bob, contract}, Seconds: 170,
 		Steps: []step{
 			message("agree", alice, bob, "Alice and Bob each make a fresh key and agree the trade"),
@@ -377,7 +377,7 @@ var scenarios = []*scenario{
 	// ---- bitcoin -------------------------------------------------------------
 	{
 		ID: "swap-btc", Group: "bitcoin", Title: "Swap bitcoin for ZNN",
-		Shows:   "Alice sells 100,000 sats for 10 ZNN. When she takes the ZNN her secret becomes public, and Bob uses it to finish the signature that pays him the bitcoin. On Bitcoin it looks like any other payment.",
+		Shows:   "Alice sells 100,000 sats for 10 ZNN. On Bitcoin it looks like any other payment.",
 		Parties: []string{alice, bob, contract, bitcoin}, Seconds: 90,
 		Steps: []step{
 			onBitcoin("btc-lock", alice, "Alice locks 100,000 sats on Bitcoin"),
@@ -392,7 +392,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "swap-btc-refund", Group: "bitcoin", Title: "A bitcoin swap that stalls is refunded",
-		Shows:   "Both sides lock, then Alice never takes the ZNN. After the deadlines Alice takes her bitcoin back on Bitcoin and Bob takes his ZNN back here.",
+		Shows:   "Alice never takes the ZNN. Both take their own funds back.",
 		Parties: []string{alice, bob, contract, bitcoin}, Seconds: 240,
 		Steps: []step{
 			onBitcoin("btc-lock", alice, "Alice locks 100,000 sats on Bitcoin"),
@@ -406,7 +406,7 @@ var scenarios = []*scenario{
 	},
 	{
 		ID: "swap-btc-bad-terms", Group: "bitcoin", Title: "Bob refuses a bitcoin refund that opens too soon",
-		Shows:   "Alice proposes a swap whose bitcoin refund opens two blocks from now, while Bob's ZNN would stay open to her for four minutes. She could take the bitcoin back and the ZNN as well, so Bob says no before anything is locked.",
+		Shows:   "Alice's bitcoin refund would open too soon, so Bob says no before anything is locked.",
 		Parties: []string{alice, bob, contract, bitcoin}, Seconds: 20,
 		Steps: []step{
 			message("terms", alice, bob, "Alice proposes a refund two blocks out"),

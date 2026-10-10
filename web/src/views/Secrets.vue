@@ -164,10 +164,10 @@ const useSigner = () => (msg.destination = signerView(state.signer).address ?? '
 <template>
   <h1 class="bench-title">Secrets and points</h1>
   <p class="bench-lede">
-    A lock is made from a secret, and whoever holds the secret can open it. Make them here; the other benches pick them up by the lock they open.
+    Whoever holds a lock's secret can open it. Make secrets here.
   </p>
   <p class="note warn" style="margin-top: 12px">
-    These are kept in this browser's storage in the clear, so that a reload does not lose an entry's only key. That is right for a devnet and wrong for anything else.
+    Kept in this browser's storage in the clear. Fine for a devnet only.
   </p>
 
   <section class="panel">
@@ -237,7 +237,7 @@ const useSigner = () => (msg.destination = signerView(state.signer).address ?? '
   <section class="panel">
     <h2 class="section-title">Tweak a point</h2>
     <p class="small prose">
-      Two entries locked to <code>T</code> and <code>T + d·G</code> show unrelated points and, once opened, unrelated scalars. Whoever knows <code>d</code> turns one scalar into the other by adding it. This is how the two legs of a swap are kept from being linked on chain.
+      Entries locked to <code>T</code> and <code>T + d·G</code> look unrelated. Whoever knows <code>d</code> turns one scalar into the other.
     </p>
     <div class="fields-2">
       <label class="field">
@@ -272,7 +272,7 @@ const useSigner = () => (msg.destination = signerView(state.signer).address ?? '
   <section class="panel">
     <h2 class="section-title">The unlock message</h2>
     <p class="small prose">
-      A key lock opens with a signature over this message. It binds the chain, the contract, the point type, the entry and the destination, so a signature made for one of them opens nothing else. The Entries bench builds it for you; this is the same thing with the parts on show.
+      A key lock opens with a signature over this message, which binds the chain, contract, point type, entry and destination.
     </p>
     <div class="fields-2">
       <label class="field">
@@ -317,7 +317,7 @@ const useSigner = () => (msg.destination = signerView(state.signer).address ?? '
   <section class="panel">
     <h2 class="section-title">An adaptor signature</h2>
     <p class="small prose">
-      The Bitcoin leg of a swap is a signature that is not finished. Whoever signs it locks it to a point <code>T</code>; it becomes a valid BIP-340 signature only when the scalar behind <code>T</code> is added, and anyone holding the unfinished one can read that scalar off the finished one. The same bytes come out of the Go scenario and the Dart SDK.
+      An adaptor signature becomes valid only when the scalar behind <code>T</code> is added, and the finished signature reveals that scalar.
     </p>
     <div class="fields-2">
       <label class="field">
